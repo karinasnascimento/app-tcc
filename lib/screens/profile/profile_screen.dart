@@ -1,0 +1,137 @@
+import 'package:flutter/material.dart';
+import '../../state/app_state.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/dvanille_brand.dart';
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppState.instance;
+    return Scaffold(
+      appBar: const DVanilleHeader(title: 'Perfil'),
+      body: ListenableBuilder(
+        listenable: state,
+        builder: (context, _) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 14),
+                const DVanilleMark(size: 84),
+                const SizedBox(height: 12),
+                Text(state.user.nome, style: Theme.of(context).textTheme.titleLarge),
+                Text(state.user.email, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.pushNamed(context, '/editar-perfil'),
+                  child: const Text('EDITAR PERFIL'),
+                ),
+                const SizedBox(height: 12),
+                _tile(context, Icons.receipt_long_outlined, 'Meus pedidos', '/pedidos'),
+                _tile(context, Icons.favorite_border, 'Meus favoritos', '/favoritos'),
+                _tile(context, Icons.location_on_outlined, 'Meus endereços', '/enderecos'),
+                _tile(context, Icons.restaurant_menu_outlined, 'Restrições alimentares', '/restricoes'),
+                _tile(context, Icons.notifications_none, 'Notificações', '/notificacoes'),
+                _tile(context, Icons.settings_outlined, 'Configurações', '/configuracoes'),
+                if (state.isAdmin)
+                  _tile(context, Icons.admin_panel_settings_outlined, 'Área administrativa', '/admin'),
+                const SizedBox(height: 20),
+                const BowDecoration(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, IconData icon, String label, String route) {
+    return DVanilleCard(
+      onTap: () => Navigator.pushNamed(context, route),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: AppColors.brownStrong),
+        title: Text(label, style: const TextStyle(color: AppColors.brownStrong, fontWeight: FontWeight.w500)),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+      ),
+    );
+  }
+}
+
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nomeCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _telCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final u = AppState.instance.user;
+    _nomeCtrl = TextEditingController(text: u.nome);
+    _emailCtrl = TextEditingController(text: u.email);
+    _telCtrl = TextEditingController(text: u.telefone);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const DVanilleHeader(title: 'Editar perfil', showBack: true),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Nome', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.brownStrong)),
+              const SizedBox(height: 6),
+              TextFormField(controller: _nomeCtrl, validator: (v) => (v == null || v.isEmpty) ? 'Informe seu nome' : null),
+              const SizedBox(height: 16),
+              const Text('E-mail', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.brownStrong)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) => (v == null || !v.contains('@')) ? 'E-mail inválido' : null,
+              ),
+              const SizedBox(height: 16),
+              const Text('Telefone', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.brownStrong)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _telCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(hintText: '(XX) XXXXX-XXXX'),
+              ),
+              const SizedBox(height: 26),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    AppState.instance.updateProfile(
+                      nome: _nomeCtrl.text,
+                      email: _emailCtrl.text,
+                      telefone: _telCtrl.text,
+                    );
+                    showBrandSnackBar(context, 'Perfil atualizado com sucesso!');
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('SALVAR ALTERAÇÕES'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

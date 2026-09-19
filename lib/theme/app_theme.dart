@@ -1,0 +1,148 @@
+import 'package:flutter/material.dart';
+
+/// Paleta oficial D'Vanille — preservar em todas as telas.
+class AppColors {
+  static const Color brown = Color(0xFF9C8A73);
+  static const Color brownStrong = Color(0xFF7D6D57);
+  static const Color pink = Color(0xFFEFCECC);
+  static const Color cream = Color(0xFFFFF4E8);
+  static const Color beige = Color(0xFFE1CDB3);
+
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color success = Color(0xFF7C9A72);
+  static const Color warning = Color(0xFFC98A4B);
+  static const Color danger = Color(0xFFB56262);
+  static const Color textMuted = Color(0xFFA6957E);
+}
+
+class AppRadius {
+  static const double sm = 10;
+  static const double md = 16;
+  static const double lg = 22;
+  static const double pill = 999;
+}
+
+class AppTheme {
+  static ThemeData get theme {
+    final base = ThemeData(
+      useMaterial3: true,
+      scaffoldBackgroundColor: AppColors.cream,
+      primaryColor: AppColors.brown,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.brown,
+        primary: AppColors.brown,
+        secondary: AppColors.pink,
+        surface: AppColors.cream,
+        error: AppColors.danger,
+      ),
+      fontFamily: 'serif',
+    );
+
+    return base.copyWith(
+      textTheme: base.textTheme.copyWith(
+        headlineSmall: const TextStyle(
+          fontFamily: 'serif',
+          fontWeight: FontWeight.w600,
+          color: AppColors.brownStrong,
+          fontSize: 22,
+        ),
+        titleLarge: const TextStyle(
+          fontFamily: 'serif',
+          fontWeight: FontWeight.w600,
+          color: AppColors.brownStrong,
+          fontSize: 18,
+        ),
+        titleMedium: const TextStyle(
+          fontFamily: 'serif',
+          fontWeight: FontWeight.w600,
+          color: AppColors.brownStrong,
+          fontSize: 16,
+        ),
+        bodyLarge: const TextStyle(color: AppColors.brownStrong, fontSize: 15),
+        bodyMedium: const TextStyle(color: AppColors.brown, fontSize: 14),
+        bodySmall: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.cream,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: AppColors.brownStrong,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: 'serif',
+          fontWeight: FontWeight.w600,
+          color: AppColors.brownStrong,
+          fontSize: 19,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.brown,
+          foregroundColor: AppColors.white,
+          minimumSize: const Size.fromHeight(52),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.brownStrong,
+          minimumSize: const Size.fromHeight(52),
+          side: const BorderSide(color: AppColors.beige, width: 1.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: AppColors.brownStrong),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.beige),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.beige),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.brown, width: 1.6),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.beige.withValues(alpha: 0.35),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(color: AppColors.beige, thickness: 1),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.brownStrong,
+        contentTextStyle: const TextStyle(color: AppColors.white),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+      ),
+    );
+  }
+}

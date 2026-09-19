@@ -1,0 +1,253 @@
+import 'package:flutter/material.dart';
+import '../../models/models.dart';
+import '../../state/app_state.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/dvanille_brand.dart';
+
+class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({super.key});
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  MetodoPagamento? metodo;
+  bool precisaTroco = false;
+  final _trocoCtrl = TextEditingController();
+  String? trocoErro;
+
+  final _numeroCtrl = TextEditingController();
+  final _nomeCtrl = TextEditingController();
+  final _validadeCtrl = TextEditingController();
+  final _cvvCtrl = TextEditingController();
+
+  bool pixAguardando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    metodo = AppState.instance.metodoPagamentoSelecionado;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppState.instance;
+    final total = state.cartSubtotal + state.taxaEntregaAtual;
+
+    return Scaffold(
+      appBar: const DVanilleHeader(title: 'Pagamento', showBack: true),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('MÉTODO DE PAGAMENTO', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.brownStrong, fontSize: 13)),
+            const SizedBox(height: 14),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.7,
+              children: [
+                _method(MetodoPagamento.dinheiro, Icons.payments_outlined, 'DINHEIRO'),
+                _method(MetodoPagamento.cartaoCredito, Icons.credit_card, 'CARTÃO'),
+                _method(MetodoPagamento.pix, Icons.qr_code, 'PIX'),
+                _method(MetodoPagamento.carteira, Icons.account_balance_wallet_outlined, 'CARTEIRA'),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (metodo == MetodoPagamento.dinheiro) _cashSection(),
+            if (metodo == MetodoPagamento.cartaoCredito || metodo == MetodoPagamento.cartaoDebito) _cardSection(),
+            if (metodo == MetodoPagamento.pix) _pixSection(total),
+            if (metodo == MetodoPagamento.carteira) _walletSection(),
+            const Divider(height: 32),
+            const Text('DETALHES', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.brownStrong, fontSize: 13)),
+            const SizedBox(height: 10),
+            _totalRow('Subtotal', state.cartSubtotal),
+            _totalRow('Entrega', state.taxaEntregaAtual),
+            const Divider(),
+            _totalRow('TOTAL', total, bold: true),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: metodo == null ? null : () => _confirmar(context, total),
+              child: Text(metodo == MetodoPagamento.pix ? 'CONFIRMAR PAGAMENTO' : 'CONFIRMAR PAGAMENTO'),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmar(BuildContext context, double total) {
+    if (metodo == MetodoPagamento.dinheiro && precisaTroco) {
+      final valor = double.tryParse(_trocoCtrl.text.replaceAll(',', '.'));
+      if (valor == null || valor < total) {
+        setState(() => trocoErro = 'Informe um valor suficiente para cobrir o total.');
+        return;
+      }
+    }
+    if ((metodo == MetodoPagamento.cartaoCredito || metodo == MetodoPagamento.cartaoDebito) &&
+        (_numeroCtrl.text.isEmpty || _nomeCtrl.text.isEmpty || _validadeCtrl.text.isEmpty || _cvvCtrl.text.isEmpty)) {
+      showBrandSnackBar(context, 'Preencha todos os dados do cartão.');
+      return;
+    }
+    AppState.instance.setMetodoPagamento(metodo!);
+    AppState.instance.trocoPara = precisaTroco ? double.tryParse(_trocoCtrl.text.replaceAll(',', '.')) : null;
+    Navigator.pushNamed(context, '/checkout-ok');
+  }
+
+  Widget _method(MetodoPagamento m, IconData icon, String label) {
+    final selected = metodo == m;
+    return GestureDetector(
+      onTap: () => setState(() => metodo = m),
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected ? AppColors.brown : AppColors.white,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: selected ? AppColors.brown : AppColors.beige),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: selected ? Colors.white : AppColors.brownStrong),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.brownStrong, fontWeight: FontWeight.w700, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cashSection() {
+    return DVanilleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Precisa de troco?', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.brownStrong)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _pill('SIM', precisaTroco, () => setState(() => precisaTroco = true)),
+              const SizedBox(width: 10),
+              _pill('NÃO', !precisaTroco, () => setState(() {
+                    precisaTroco = false;
+                    trocoErro = null;
+                  })),
+            ],
+          ),
+          if (precisaTroco) ...[
+            const SizedBox(height: 14),
+            TextField(
+              controller: _trocoCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(hintText: 'Troco para quanto? (ex: 100,00)', errorText: trocoErro),
+              onChanged: (_) => setState(() => trocoErro = null),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _pill(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.brown : AppColors.cream,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: selected ? AppColors.brown : AppColors.beige),
+        ),
+        child: Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.brownStrong, fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+
+  Widget _cardSection() {
+    return DVanilleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _pill('CRÉDITO', metodo == MetodoPagamento.cartaoCredito, () => setState(() => metodo = MetodoPagamento.cartaoCredito)),
+              const SizedBox(width: 10),
+              _pill('DÉBITO', metodo == MetodoPagamento.cartaoDebito, () => setState(() => metodo = MetodoPagamento.cartaoDebito)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(controller: _numeroCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Número do cartão')),
+          const SizedBox(height: 10),
+          TextField(controller: _nomeCtrl, decoration: const InputDecoration(hintText: 'Nome impresso no cartão')),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: TextField(controller: _validadeCtrl, decoration: const InputDecoration(hintText: 'Validade (MM/AA)'))),
+              const SizedBox(width: 10),
+              Expanded(child: TextField(controller: _cvvCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'CVV'))),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text('Protótipo — nenhum dado real é processado ou armazenado.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+        ],
+      ),
+    );
+  }
+
+  Widget _pixSection(double total) {
+    return DVanilleCard(
+      child: Column(
+        children: [
+          const Icon(Icons.qr_code_2, size: 84, color: AppColors.brownStrong),
+          const SizedBox(height: 10),
+          Text('Valor: R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
+              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.brownStrong)),
+          const SizedBox(height: 6),
+          Text(
+            pixAguardando ? 'Aguardando pagamento' : 'Pagamento confirmado.',
+            style: TextStyle(color: pixAguardando ? AppColors.warning : AppColors.success, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => setState(() => pixAguardando = false),
+            child: const Text('SIMULAR PAGAMENTO'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _walletSection() {
+    return DVanilleCard(
+      child: Row(
+        children: const [
+          Icon(Icons.account_balance_wallet, color: AppColors.brownStrong),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text('Carteira digital D\'Vanille selecionada. Protótipo — nenhuma transação real é realizada.',
+                style: TextStyle(fontSize: 13, color: AppColors.brownStrong)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _totalRow(String label, double value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w400, fontSize: bold ? 16 : 14)),
+          Text('R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}',
+              style: TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w500, fontSize: bold ? 16 : 14)),
+        ],
+      ),
+    );
+  }
+}
